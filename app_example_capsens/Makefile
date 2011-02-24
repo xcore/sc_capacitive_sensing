@@ -29,9 +29,9 @@ USED_MODULES = module_capacitive_sensing
 # for compiling XMOS applications. You should not need to edit below here.
 
 
-# Use the main Makefile from module_xmos_common
--include ../module_xmos_common/build/Makefile.common
--include ../../xmos_common/module_xmos_common/build/Makefile.common
+# Use the main Makefile from module_xcommon
+-include ../module_xcommon/build/Makefile.common
+-include ../../xcommon/module_xcommon/build/Makefile.common
 
 # The final target of the build. This is usually dependent on a binary file
 # in the $(BIN_DIR) directory e.g.
