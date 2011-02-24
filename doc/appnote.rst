@@ -38,7 +38,7 @@ resistor.
 The schematics of this solution are shown below
 together with an example capacitor layout:
 
-image::schematics
+image::schematics.svg
 
 The capacitor has a nominal value of 10-20 pF (depending on the precise
 layout), and putting a finger near it will cause it to go up by 1 or 2 pF.
@@ -48,7 +48,7 @@ If we choose a resistor of 500 k$\Omega$ then the RC time for this circuit
 100 clock ticks when a finger is near the capacitor. The sequence of
 charging and measuring is shown below:
 
-image::voltage
+image::voltage.svg
 
 The system will be subject to noise (in ground and power rail for example),
 this noise can be filtered out by taking several measurements. If a digital
