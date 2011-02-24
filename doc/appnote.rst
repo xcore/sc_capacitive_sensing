@@ -209,6 +209,10 @@ remove high frequency noise. The average can be taken over a window of
 recent measurements, using a running average, or by taking a block of
 measurements. 
 
+The ``measureAverage()`` function measures an average over 64 measurements.
+scaled up by a factor of 256 (enabling larger scale averages to be computed
+without loss of precision).
+
 A window of recent measurements requires memory to store past measurements,
 but can return a high rate of measurements. A running average will return a
 high rate, but will pass more high frequency noise. A block measurement
@@ -231,12 +235,31 @@ On-the-fly background level measurements take a running average over a
 prolonged period of time, and measure the minimum over this period as a
 measurement for the background level. The time over which the measurement
 is taken limits the amount of time that a button can be pressed
-continuously.
+continuously. By adapting up and down at different speeds, one caters for
+the fact that buttons are usually not pressed. Example code that shows on
+the fly background correction is part of the ``sliderFilter`` function::
+
+
+    for(int k = 0; k < 8; k++) {
+        int offset = (((int)(this.t[k]-this.base[k])) >> 10) - minoffset;
+        unsigned int h, l, correctionSpeed;
+        avg = avg + k * offset;
+        n += offset;
+        if (this.base[k] > this.t[k]) {
+            correctionSpeed = 7;        // Lower sample found - adapt quickly
+        } else {
+            correctionSpeed = 13;       // Higher sample found - adapt slowly
+        }                               // compute base = ((2^cs - 1) * base + t) 2^-cs
+        {h,l} = mac( (1<<correctionSpeed) - 1, this.base[k], 0, this.t[k]);
+        this.base[k] = h << (32-correctionSpeed) | l >> correctionSpeed;
+    }
+
 
 When the background level is determined, a rise of more than a set number
 constitute an ``ON'' and a drop by more than a set amount will constitute an
 ``OFF''. By choosing the ON level to be higher than the OFF level hysteresis
 is created that will avoid hesitation between ON and OFF.
+
 
 Pulse generation
 ~~~~~~~~~~~~~~~~
@@ -255,8 +278,24 @@ Special button interpretation
 
 Special shaped buttons, such as a slider, can be made noise free by
 recognising specific motions only, such as slide-up and slide-down. It
-takes measurements from multiple sensors in order to disambiguate the signal.
+takes measurements from multiple sensors in order to disambiguate the
+signal.
+The ``filterSlider()`` function is an example of this functionality. It returns
+``IDLE``, ``RIGHTING``, ``LEFTING``, ``PRESSED`` or ``RELEASED`` and should
+be called at least once every 5ms. The state machine is::
 
+    +-> IDLE * -+-> PRESSED -> IDLE * -> RELEASED --+
+    |           |                                   V
+    |           +-> LEFTING ----------------------->+
+    |           |                                   V
+    |           +-> RIGHTING ---------------------->+
+    |                                               V
+    +-----------------------------------------------+
+
+The ``filterSlider()`` function maintains its state in a structure that has
+to be passed in on every invocation. 
+
+        
 Limitations
 ===========
 
