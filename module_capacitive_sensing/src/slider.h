@@ -10,6 +10,6 @@ typedef struct {
     int pressed;
 } slider;
 
-void sliderInit(slider & this);
-sliderstate filterSlider(slider &this);
+void sliderInit(slider & this, port cap, clock k);
+sliderstate filterSlider(slider &this, port cap);
 

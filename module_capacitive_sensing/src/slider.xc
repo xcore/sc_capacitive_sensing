@@ -1,5 +1,6 @@
-#include "slider.h"
 #include <xs1.h>
+#include "slider.h"
+#include "capsens.h"
 
 static int abs(int x) {
     return x < 0 ? -x : x;
@@ -13,12 +14,11 @@ void sliderInit(slider & this, port cap, clock k) {
     this.coord = 0;
     this.nomoves = this.lefts = this.rights = 0;
     this.pressed = 0;
-    setupNbit(port cap, clock k);
+    setupNbit(cap, k);
     measureAverage(cap, this.base);
 }
 
-sliderstate filterSlider(port cap, slider &this) {
-    int value = 0;
+sliderstate filterSlider(slider &this, port cap) {
     int avg = 0, n = 0;
     int coord;
     unsigned time, timePassed;

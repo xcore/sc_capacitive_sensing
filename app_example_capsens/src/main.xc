@@ -1,34 +1,51 @@
 #include <stdio.h>
-#include <capsens.h>
+#include <xs1.h>
+#include <print.h>
+#include "slider.h"
 
-//port leds = XS1_PORT_4F;
+port leds = XS1_PORT_4F;
 port cap8 = XS1_PORT_8B;
 
 clock clk1 = XS1_CLKBLK_1;
 
-main() {
+int main(void) {
     slider x;
-    int ov = 0;
     timer t;
+    int time;
+    int ov = 0;
+    int lVal = 0;
     sliderInit(x, cap8, clk1);
     while(1) {
-        int v = filterSlider(x);
+        int v = filterSlider(x, cap8);
         if (v != ov) {
             switch (v) {
             case 1:
-                printstr("Press\n");
+                leds <: 0xF;
                 break;
             case 2:
-                printstr("Left\n");
+                t :> time;
+                for(int i = 0; i < 10; i++) {
+                    lVal = lVal == 8 ? 4 : 8;
+                    leds <: lVal;
+                    t when timerafter(time += 10000000) :> int _;
+                }
+                leds <: 0;
                 break;
             case 3:
-                printstr("Right\n");
+                t :> time;
+                for(int i = 0; i < 10; i++) {
+                    lVal = lVal == 1 ? 2 : 1;
+                    leds <: lVal;
+                    t when timerafter(time += 10000000) :> int _;
+                }
+                leds <: 0;
                 break;
             case 4:
-                printstr("Release\n");
+                leds <: 0x0;
                 break;
             }
             ov = v;
         }
     }
+    return 0;
 }
