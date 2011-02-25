@@ -31,7 +31,8 @@ Key Features
 To Do
 =====
 
-   * 
+   * Testing on different designs
+   * Design of a matrix of buttons
 
 Firmware Overview
 =================
