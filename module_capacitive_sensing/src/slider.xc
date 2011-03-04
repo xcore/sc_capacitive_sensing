@@ -1,3 +1,8 @@
+// Copyright (c) 2011, XMOS Ltd, All rights reserved
+// This software is freely distributable under a derivative of the
+// University of Illinois/NCSA Open Source License posted in
+// LICENSE.txt and at <http://github.xcore.com/>
+
 #include <xs1.h>
 #include "slider.h"
 #include "capsens.h"
@@ -15,7 +20,7 @@ void sliderInit(slider & this, port cap, clock k) {
     this.nomoves = this.lefts = this.rights = 0;
     this.pressed = 0;
     setupNbit(cap, k);
-    measureAverage(cap, this.base);
+    measureAverage(cap, this.base, 1);
 }
 
 sliderstate filterSlider(slider &this, port cap) {
@@ -27,7 +32,7 @@ sliderstate filterSlider(slider &this, port cap) {
 
     tt :> time;
     timePassed = time - this.lastTime;
-    measureAverage(cap, this.t);
+    measureAverage(cap, this.t, 1);
     for(int k = 0; k < 8; k++) {
         int offset = ((int)(this.t[k]-this.base[k])) >> 10;
         if (offset < minoffset) {
