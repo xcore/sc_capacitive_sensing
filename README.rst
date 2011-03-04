@@ -7,8 +7,11 @@ Capacitive Sensing
 :Status:
   Proof of concept
 
+:Description:
+  Use an XCore timer/port to implement capacitive sensing.
+
 :Maintainer:
-  henkmuller
+  https://github.com/henkmuller
 
 
 
@@ -24,15 +27,16 @@ A video is on http://www.youtube.com/watch?v=A5VPMJAM3tQ
 Key Features
 ============
 
-   * measurement of raw data
-   * smoothing of data, automatic background level detection
-   * recognition of motion on a slider
+* measurement of raw data
+* smoothing of data, automatic background level detection
+* recognition of motion on a slider
 
 To Do
 =====
 
-   * Testing on different designs
-   * Design of a matrix of buttons
+* Testing on different designs
+* Design of a matrix of buttons
+* Add gerber files
 
 Firmware Overview
 =================
