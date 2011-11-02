@@ -6,50 +6,35 @@
 #include <stdio.h>
 #include <xs1.h>
 #include <print.h>
-#include "slider.h"
+#include <platform.h>
+#include <xscope.h>
+#include "capsens.h"
 
-port leds = XS1_PORT_4F;
-port cap8 = XS1_PORT_8B;
+on stdcore[0]: port leds = XS1_PORT_4F;
+on stdcore[0]: port cap8 = XS1_PORT_8A;
 
-clock clk1 = XS1_CLKBLK_1;
+on stdcore[0]: clock clk1 = XS1_CLKBLK_1;
 
+int vals[8] = { 6840576, 6970368, 0, 7208192, 0, 8316672, 0, 9435488 };
 int main(void) {
-    slider x;
     timer t;
-    int time;
-    int ov = 0;
-    int lVal = 0;
-    sliderInit(x, cap8, clk1);
+    int x;
+    unsigned int avg[8];
+    xscope_register(5,
+                    XSCOPE_CONTINUOUS, "Capacitance0", XSCOPE_UINT, "Value",
+                    XSCOPE_CONTINUOUS, "Capacitance1", XSCOPE_UINT, "Value",
+                    XSCOPE_CONTINUOUS, "Capacitance3", XSCOPE_UINT, "Value",
+                    XSCOPE_CONTINUOUS, "Capacitance5", XSCOPE_UINT, "Value",
+                    XSCOPE_CONTINUOUS, "Capacitance7", XSCOPE_UINT, "Value"
+        );
+
+
     while(1) {
-        int v = filterSlider(x, cap8);
-        if (v != ov) {
-            switch (v) {
-            case 1:
-                leds <: 0xF;
-                break;
-            case 2:
-                t :> time;
-                for(int i = 0; i < 10; i++) {
-                    lVal = lVal == 8 ? 4 : 8;
-                    leds <: lVal;
-                    t when timerafter(time += 10000000) :> int _;
-                }
-                leds <: 0;
-                break;
-            case 3:
-                t :> time;
-                for(int i = 0; i < 10; i++) {
-                    lVal = lVal == 1 ? 2 : 1;
-                    leds <: lVal;
-                    t when timerafter(time += 10000000) :> int _;
-                }
-                leds <: 0;
-                break;
-            case 4:
-                leds <: 0x0;
-                break;
-            }
-            ov = v;
+        measureAverage(cap8, avg, 1);
+            xscope_probe_data(0, avg[0] - vals[0]);
+        for(int i = 1; i < 8; i+=2) {
+         //   printf("%d: %d\n", i, avg[i]-vals[i]);
+            xscope_probe_data((i>>1)+1, avg[i] - vals[i]);
         }
     }
     return 0;
