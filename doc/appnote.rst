@@ -1,12 +1,5 @@
-
-============================
 Capacitive input on the XS-1
-============================
-
-Corin Rathbone, Henk Muller
-
-Introduction
-============
+++++++++++++++++++++++++++++
 
 Capacitive sensing can detect the presence of somebody's finger near a
 capacitor, and use that as an input mechanism to implement, for example, a
@@ -16,14 +9,15 @@ The XCore XS1 processor requires little external hardware to implement cap
 sensing: a resistor. A demo is on
 http://www.youtube.com/watch?v=A5VPMJAM3tQ
 
-As an example, capacitive enables the possibility of adding a
+As an example, capacitive sensing enables the possibility of adding a
 volume control slider on an iPod dock, input for a mixer on a USB-audio
 device, or a touch sensitive button on a guitar dongle.
 
-The current incarnation can support one button per bit of an 8-bit port,
-and as single 50 MIPS thread can monitor all four 8-bit ports, limiting the
-number of buttons to 32. The cost of a button is the cost of the PCB or FPC
-plus the cost of a resistor, $ 0.01 per button plus the cost of PCB or FPC.
+The current incarnation can support one button per bit of an 4-bit or 8-bit
+port, and a single 50 MIPS thread can monitor all four 8-bit ports,
+limiting the number of buttons to 32. The cost of a button is the cost of
+the PCB or FPC plus the cost of a resistor, less than $ 0.01 per button plus the cost
+of PCB or FPC.
 
 
 Principles
@@ -81,13 +75,23 @@ required are a few SMD resistors:
 
 image::back.jpg
 
+Care must be taken to layout the capacitive sensing in a noise insensitive
+manner. In particular, there should be no switching traces parallel to any
+of the capsense traces, as cross-talk will destroy the signal. This
+includes other capsense traces that are monitored asynchronously. Capsense
+traces that are measured by the same task can be routed together.
 
 Software
 ========
 
-The software to interpret the signal performs two functions: one is to
-measure the time and hence the capacitor value, and the other function is
-to interpret this value and take the noise out.
+The software to interpret the signal performs three functions:
+
+#. to measure the time and hence the capacitor value,
+
+#. To translate this into a notion of "Touching" and if so to a notion of a
+linear position alongst a number of buttons
+
+#. to interpret a sequence of positions and recognise a motion.
 
 Measuring capacitance
 ---------------------
@@ -190,16 +194,16 @@ and involves a small bit of assembly to revert to an unbuffered port)::
 Interpreting data
 -----------------
 
-The measurement above returns an *analogue* value that represents the
+The measurement above represents an *analogue* value that is proportional to the
 total capacitance. It includes noise caused by, for example, the power
 supply, and its values are subject to design variations in for example
 resistor values.
 
 The operations can be performed to improve the data:
-1. Smoothing
-1. Background level detection
-1. Pulse generation
-1. Hysteresis
+#. Smoothing
+#. Background level detection
+#. Pulse generation
+#. Hysteresis
 
 Smoothing
 ~~~~~~~~~
@@ -210,8 +214,6 @@ recent measurements, using a running average, or by taking a block of
 measurements. 
 
 The ``measureAverage()`` function measures an average over 64 measurements.
-scaled up by a factor of 256 (enabling larger scale averages to be computed
-without loss of precision).
 
 A window of recent measurements requires memory to store past measurements,
 but can return a high rate of measurements. A running average will return a
@@ -227,9 +229,9 @@ Background level
 ~~~~~~~~~~~~~~~~
 
 The background level is the value of the capacitor when it is not touched.
-It can be established when switching the system on, or on-the-fly. On the
-fly is preferable since there is no guarantee that the capacitor is at
-background level on start up.
+It can be established when switching the system on, or on-the-fly.
+On-the-fly is preferable since there is no guarantee that the capacitor is
+at background level on start up.
 
 On-the-fly background level measurements take a running average over a
 prolonged period of time, and measure the minimum over this period as a
@@ -301,5 +303,4 @@ Limitations
 
 It is important to understand the limitations of this design. It is not
 clear at present whether this system is robust enough to be rolled out in
-volume design. One would expect a difference due to differences in distance between
-the capacitor and the casing, differences in thickness of the casing, etc.
+volume design.

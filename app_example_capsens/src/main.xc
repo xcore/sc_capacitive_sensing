@@ -9,33 +9,74 @@
 #include <platform.h>
 #include <xscope.h>
 #include "capsens.h"
+#include "absolute.h"
 
-on stdcore[0]: port leds = XS1_PORT_4F;
-on stdcore[0]: port cap8 = XS1_PORT_8A;
-
+on stdcore[0]: port cap4 = XS1_PORT_4A;
+on stdcore[0]: port cap4y = XS1_PORT_4B;
+on stdcore[0]: port p32 = XS1_PORT_32A;
 on stdcore[0]: clock clk1 = XS1_CLKBLK_1;
 
-int vals[8] = { 6840576, 6970368, 0, 7208192, 0, 8316672, 0, 9435488 };
-int main(void) {
+void xscope_user_init(void) {
+    xscope_config_io(XSCOPE_IO_BASIC);
+}
+
+int main3(void) {
+    absolute_pos a, ay;
     timer t;
-    int x;
-    unsigned int avg[8];
-    xscope_register(5,
-                    XSCOPE_CONTINUOUS, "Capacitance0", XSCOPE_UINT, "Value",
-                    XSCOPE_CONTINUOUS, "Capacitance1", XSCOPE_UINT, "Value",
-                    XSCOPE_CONTINUOUS, "Capacitance3", XSCOPE_UINT, "Value",
-                    XSCOPE_CONTINUOUS, "Capacitance5", XSCOPE_UINT, "Value",
-                    XSCOPE_CONTINUOUS, "Capacitance7", XSCOPE_UINT, "Value"
-        );
-
-
+    int tt, to;
+    
+    absolute_slider_init(a, cap4, clk1, 4, 100, 50);
+    absolute_slider_init(ay, cap4y, clk1, 4, 100, 50);
+    t :> to;
     while(1) {
-        measureAverage(cap8, avg, 1);
-            xscope_probe_data(0, avg[0] - vals[0]);
-        for(int i = 1; i < 8; i+=2) {
-         //   printf("%d: %d\n", i, avg[i]-vals[i]);
-            xscope_probe_data((i>>1)+1, avg[i] - vals[i]);
-        }
+        t :> tt;
+        int x = absolute_slider(a, cap4);
+        int y = absolute_slider(ay, cap4y);
+        printf("%9d %7d %7d\n", tt - to, x, y);
     }
     return 0;
+}
+
+int main1(void) {
+    unsigned int avg[4];
+    timer t;
+    int tt, to;
+
+    setupNbit(cap4, clk1);
+    t :> to;
+    while(1) {
+        t :> tt;
+        printf("%9d ", tt - to);
+        measureAveragePrint(cap4, avg);
+    }
+    return 0;
+}
+
+int main2(void) {
+    timer t;
+    int tt;
+    int i = 0;
+    int delay = 150;
+    int up = 1;
+    t :> tt;
+    while(1) {
+        tt += delay;
+        delay += up;
+        if (delay > 1000) {
+            up = -1;
+        }
+        if (delay < 50) {
+            up = 1;
+        }
+        t when timerafter(tt) :> void;
+        p32 <: ~0; // p32 <: i
+        i++;        
+    }
+}
+
+int main() {
+    par {
+        main3();
+        main2();
+    }
 }
