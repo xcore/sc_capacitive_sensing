@@ -3,61 +3,64 @@
 #include <xs1.h>
 #include <stdio.h>
 #include "capsens.h"
+#include <print.h>
+[[distributable]]
+void absolute_slider(server absolute_slider_if i, port cap, const clock k,
+                     static const int n_elements,
+                     static const int N,
+                     int threshold_press, int threshold_unpress) {
+  int pressed = 0;
+  unsigned int base[n_elements];
+  unsigned int t[n_elements];
+  setupNbit(cap, k);
+  measureAverage(cap, base, n_elements, N);
+  for(int k = 0; k < n_elements; k++) {
+    base[k] >>= 1;
+  }
+  while (1) {
+    select {
+    case i.get_coord() -> int coord:
+      int avg = 0, n = 0;
+      int minoffset = 999;
 
-void absolute_slider_init(absolute_pos & this, port cap, clock k, int n_elements,
-                          int threshold_press, int threshold_unpress) {
-    this.n_elements = n_elements;
-    this.pressed = 0;
-    this.threshold_press = threshold_press;
-    this.threshold_unpress = threshold_unpress;
-    setupNbit(cap, k);
-    measureAverage(cap, this.base);
-    for(int k = 0; k < this.n_elements; k++) {
-        this.base[k] >>= 1;
-    }
-}
-
-int absolute_slider(absolute_pos &this, port cap) {
-    int avg = 0, n = 0;
-    int coord;
-    int minoffset = 999;
-
-    measureAverage(cap, this.t);
-    for(int k = 0; k < this.n_elements; k++) {
-        this.t[k] >>= 1;
-    }
+      measureAverage(cap, t, n_elements, N);
+      for(int k = 0; k < n_elements; k++) {
+        t[k] >>= 1;
+      }
 #if 0
-    for(int k = 0; k < this.n_elements; k++) {
-        int offset = this.t[k]-this.base[k];
+      for(int k = 0; k < n_elements; k++) {
+        int offset = t[k]-base[k];
         if (offset < minoffset) {
-            minoffset = offset;
+          minoffset = offset;
         }
-    }
+      }
 #endif
-    for(int k = 0; k < this.n_elements; k++) {
-        int offset = (this.t[k]-this.base[k]);// - minoffset;
+      for(int k = 0; k < n_elements; k++) {
+        int offset = (t[k]-base[k]);// - minoffset;
         unsigned int h, l, correctionSpeed;
-//            printf(" %8d ", this.t[k] - this.base[k]);
+        //            printf(" %8d ", t[k] - base[k]);
         avg = avg + k * offset;
         n += offset;
-        if (this.base[k] > this.t[k]) {
-            correctionSpeed = 10;        // Lower sample found - adapt quickly
+        if (base[k] > t[k]) {
+          correctionSpeed = 10;        // Lower sample found - adapt quickly
         } else {
-            correctionSpeed = 10;       // Higher sample found - adapt slowly
+          correctionSpeed = 10;       // Higher sample found - adapt slowly
         }                               // compute base = ((2^cs - 1) * base + t) 2^-cs
-        {h,l} = mac( (1<<correctionSpeed) - 1, this.base[k], 0, this.t[k]);
-        this.base[k] = h << (32-correctionSpeed) | l >> correctionSpeed;
-    }
-    if (this.pressed) {
-        if (n < this.threshold_unpress) {
-            this.pressed = 0;
+        {h,l} = mac( (1<<correctionSpeed) - 1, base[k], 0, t[k]);
+        base[k] = h << (32-correctionSpeed) | l >> correctionSpeed;
+      }
+      if (pressed) {
+        if (n < threshold_unpress) {
+          pressed = 0;
         }
-    } else {
-        if (n > this.threshold_press) {
-            this.pressed = 1;
+      } else {
+        if (n > threshold_press) {
+          pressed = 1;
         }
+      }
+      coord = pressed ? ABSOLUTE_SLIDER_ELEMENT*avg/n : 0;
+      //    printf("%6d %d %8d %8d\n", coord, pressed, avg, n);
+      break;
     }
-    coord = this.pressed ? ABSOLUTE_SLIDER_ELEMENT*avg/n : 0;
-//    printf("%6d %d %8d %8d\n", coord, this.pressed, avg, n);
-    return coord;
+  }
 }

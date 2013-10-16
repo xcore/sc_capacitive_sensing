@@ -1,6 +1,6 @@
 TARGET = STARTKIT
 APP_NAME =
-XCC_FLAGS = -fxscope -lxscope
+XCC_FLAGS = -fxscope -report -save-temps -g
 USED_MODULES = module_capacitive_sensing
 
 XMOS_MAKE_PATH ?= ../..

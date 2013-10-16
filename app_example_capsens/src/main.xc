@@ -11,6 +11,7 @@
 #include "capsens.h"
 #include "absolute.h"
 
+
 on stdcore[0]: port cap4 = XS1_PORT_4A;
 on stdcore[0]: port cap4y = XS1_PORT_4B;
 on stdcore[0]: port p32 = XS1_PORT_32A;
@@ -20,24 +21,20 @@ void xscope_user_init(void) {
     xscope_config_io(XSCOPE_IO_BASIC);
 }
 
-int main3(void) {
-    absolute_pos a, ay;
+void main3(client absolute_slider_if ax, client absolute_slider_if ay) {
     timer t;
     int tt, to;
-    
-    absolute_slider_init(a, cap4, clk1, 4, 100, 50);
-    absolute_slider_init(ay, cap4y, clk1, 4, 100, 50);
+
     t :> to;
     while(1) {
         t :> tt;
-        int x = absolute_slider(a, cap4);
-        int y = absolute_slider(ay, cap4y);
+        int x = ax.get_coord();
+        int y = ay.get_coord();
         printf("%9d %7d %7d\n", tt - to, x, y);
     }
-    return 0;
 }
 
-int main1(void) {
+void main1(void) {
     unsigned int avg[4];
     timer t;
     int tt, to;
@@ -47,12 +44,11 @@ int main1(void) {
     while(1) {
         t :> tt;
         printf("%9d ", tt - to);
-        measureAveragePrint(cap4, avg);
+        measureAveragePrint(cap4, avg, 4, 80);
     }
-    return 0;
 }
 
-int main2(void) {
+void main2(void) {
     timer t;
     int tt;
     int i = 0;
@@ -75,8 +71,13 @@ int main2(void) {
 }
 
 int main() {
-    par {
-        main3();
-        main2();
-    }
+  absolute_slider_if ax, ay;
+  capsenseInitClock(clk1);
+  par {
+    absolute_slider(ax, cap4, clk1, 4, 4*20, 100, 50);
+    absolute_slider(ay, cap4y, clk1, 4, 4*20, 100, 50);
+    main3(ax, ay);
+    main2();
+  }
+  return 0;
 }
