@@ -9,20 +9,25 @@
 #include <print.h>
 #include <stdio.h>
 
-#define N (20 * CAPSENSE_WIDTH)
-
-void setupNbit(port cap, clock k) {
+void capsenseInitClock(clock k)
+{
   stop_clock(k);
   set_clock_div(k, 1);
-  configure_in_port(cap, k);
   start_clock(k);
 }
 
-void measureNbit(port cap, unsigned int times[]) {
+void setupNbit(port cap, const clock k) {
+  configure_in_port(cap, k);
+
+}
+
+void measureNbit(port cap, unsigned int times[width],
+                 static const unsigned width,
+                 static const unsigned N) {
     int values[N];
     int curCaps, notSeen, curTime, newCaps, newBits;
     int t1, t0;
-    int mask = (1 << CAPSENSE_WIDTH) - 1;
+    int mask = (1 << width) - 1;
     
     asm("setc res[%0], 0" :: "r"(cap));            // reset port
     asm("setc res[%0], 8" :: "r"(cap));            // reset port - for flipping around
@@ -37,7 +42,7 @@ void measureNbit(port cap, unsigned int times[]) {
     
     cap :> void;                                   // Drain first two values, and record time
     cap :> void @ t1;                              // Then record values; find changes later
-#pragma unsafe arrays
+
 #pragma loop unroll(4)
     for(int i = 0; i < N; i++) {                   // Record up to N values.
         cap :> values[i];                          // Too high a value of N costs memory and time
@@ -46,11 +51,11 @@ void measureNbit(port cap, unsigned int times[]) {
     curCaps = CAPSENSE_PULLDOWN ? mask : 0;                 // Caps that are High
     curTime = (t1 - t0) & 0xffff;                  // Time of first measurement
     for(int i = 0; i < N && notSeen != 0; i++) {
-        for(int k = 0; k < 32; k += CAPSENSE_WIDTH) {
+        for(int k = 0; k < 32; k += width) {
             newCaps = (values[i]>>k) & mask;       // Extract measurement
             newBits = (curCaps^newCaps)&notSeen;   // Changed caps
             if (newBits != 0) {
-                for(int j = 0; j < CAPSENSE_WIDTH; j ++) {
+                for(int j = 0; j < width; j ++) {
                     if(((newBits >> j) & 1) != 0) {
                         times[j] = curTime;      // Record time for
                     }                          // each changed cap
@@ -66,25 +71,26 @@ void measureNbit(port cap, unsigned int times[]) {
 #define AVERAGE_BITS 6
 #define AVERAGE_SIZE (1<<AVERAGE_BITS)
 
-#pragma unsafe arrays
-void measureAverageBoth(port cap, unsigned int avg[CAPSENSE_WIDTH], int print) {
-    int a2[CAPSENSE_WIDTH];
-    for(int k = 0; k < CAPSENSE_WIDTH; k++) {
+void measureAverageBoth(port cap, unsigned int avg[width],
+                        static const unsigned width, int print,
+                        static const unsigned N) {
+    int a2[width];
+    for(int k = 0; k < width; k++) {
         avg[k] = 0;
         a2[k] = 0;
     }
     for(int i = 0; i < AVERAGE_SIZE; i++) {
-        unsigned int t[CAPSENSE_WIDTH];
-        for(int k = 0; k < CAPSENSE_WIDTH; k++) {
-            t[k] = N * 32 / CAPSENSE_WIDTH;
+        unsigned int t[width];
+        for(int k = 0; k < width; k++) {
+            t[k] = N * 32 / width;
         }
-        measureNbit(cap, t);
-        for(int k = 0; k < CAPSENSE_WIDTH; k++) {
+        measureNbit(cap, t, width, N);
+        for(int k = 0; k < width; k++) {
             a2[k] += t[k]*t[k];                  // sum of squares for standard dev
             avg[k] += t[k];
         }
     }
-    for(int k = 0; k < CAPSENSE_WIDTH; k++) {
+    for(int k = 0; k < width; k++) {
         avg[k] >>= AVERAGE_BITS;
         a2[k] >>= AVERAGE_BITS;
         int sdev = a2[k] - avg[k] * avg[k];   // standard deviation unusued at present
@@ -97,10 +103,15 @@ void measureAverageBoth(port cap, unsigned int avg[CAPSENSE_WIDTH], int print) {
     }
 }
 
-void measureAveragePrint(port cap, unsigned int avg[CAPSENSE_WIDTH]) {
-    measureAverageBoth(cap, avg, 1);
+void measureAveragePrint(port cap, unsigned int avg[width],
+                         static const unsigned width,
+                         static const unsigned N) {
+  measureAverageBoth(cap, avg, width, 1, N);
 }
 
-void measureAverage(port cap, unsigned int avg[CAPSENSE_WIDTH]) {
-    measureAverageBoth(cap, avg, 0);
+void measureAverage(port cap, unsigned int avg[width],
+                    static const unsigned width,
+                    static const unsigned N) {
+  measureAverageBoth(cap, avg, width, 0, N);
 }
+

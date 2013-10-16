@@ -1,1 +1,3 @@
 MODULE_XCC_FLAGS = $(XCC_FLAGS) -O2
+
+OPTIONAL_HEADERS += capsense_conf.h

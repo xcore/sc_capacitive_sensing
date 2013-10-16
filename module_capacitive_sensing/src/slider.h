@@ -2,32 +2,27 @@
 // This software is freely distributable under a derivative of the
 // University of Illinois/NCSA Open Source License posted in
 // LICENSE.txt and at <http://github.xcore.com/>
+#ifndef _SLIDER_H_
+#define _SLIDER_H_
 
 #include "absolute.h"
 
-/** Type that enumerates the possible activities that may have happened on a slider.
+/** Type that enumerates the possible activities that may have happened on
+    a slider.
  */
 typedef enum {IDLE, PRESSED, LEFTING, RIGHTING, RELEASED, PRESSING} sliderstate;
 
-/** Type that encapsulates the internal state of a slider. The only element
- * that is of possible interest in the structure is the coord field, which
- * holds the last absolute position; see absolute.h for an explanation of
- * the value.
- */
-typedef struct {
-    absolute_pos pos;
-    int state;
-    int lastTime;
-    int coord;
-    int lefts, rights, nomoves;
-    int old_state;
-} slider;
-
-/** Function to initialise the slider structure. FOr each slider that is of
- * interest to the application, a slider variable should be declared and
- * initialised using this function.
+typedef interface slider_query_if {
+/** Function to perform a measurement on the slider and to check if
+ * anything has happened. Call this function regularly.
  *
- * \param this     slider structure that will hold the state that is initialised
+ * \returns one of the activities that may have happened to the slider.
+ */
+  sliderstate filter();
+  int get_coord();
+} slider_query_if;
+
+/** Function to implement a slider.
  *
  * \param cap      port on which the cap sense is connected
  *
@@ -41,13 +36,22 @@ typedef struct {
  *
  * \param threshold_unpressed Value below which something is no longer pressed. Set to 200
  */
-void slider_init(slider & this, port cap, clock k, int n_elements,
-                          int threshold_pressed, int threshold_unpressed);
+[[distributable]]
+void slider(server slider_query_if i, client absolute_slider_if abs);
 
-/** Function to perform a measurement on the slider and to check if
- * anything has happened. Clal this function regularly.
- *
- * \returns one of the activities that may have happened to the slider.
- */
-sliderstate slider_filter(slider &this, port cap);
+typedef interface slider_if {
+  [[notification]] slave void changed_state();
+  [[clears_notification]] sliderstate get_slider_state();
+  int get_coord();
+} slider_if;
+
+[[combinable]]
+void slider_task(server slider_if i, port cap, const clock clk,
+                 static const int n_elements,
+                 static const int N,
+                 int threshold_pressed, int threshold_unpressed);
+
+
+
+#endif // _SLIDER_H_
 

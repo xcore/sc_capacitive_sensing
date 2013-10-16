@@ -4,17 +4,31 @@
 // LICENSE.txt and at <http://github.xcore.com/>
 
 #ifndef CAPSENS_H
-
 #define CAPSENSE_H 1
 
 #include <xs1.h>
+#ifdef __capsense_conf_h_exists__
+#include "capsense_conf.h"
+#endif
 
-#define CAPSENSE_WIDTH      4
+#ifndef CAPSENSE_PULLDOWN
 #define CAPSENSE_PULLDOWN   1    // Set to zero for pull-ups.
+#endif
 
-void setupNbit(port cap, clock k);
-void measureNbit(port cap, unsigned int times[]);
-void measureAverage(port cap, unsigned int avg[CAPSENSE_WIDTH]);
-void measureAveragePrint(port cap, unsigned int avg[CAPSENSE_WIDTH]);
+void capsenseInitClock(clock k);
+
+void setupNbit(port cap, const clock k);
+
+void measureNbit(port cap, unsigned int times[width],
+                 static const unsigned width,
+                 static const unsigned N);
+
+void measureAverage(port cap, unsigned int avg[width],
+                    static const unsigned width,
+                    static const unsigned N);
+
+void measureAveragePrint(port cap, unsigned int avg[width],
+                         static const unsigned width,
+                         static const unsigned N);
 
 #endif
