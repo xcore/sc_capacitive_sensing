@@ -43,9 +43,11 @@ void measureNbit(port cap, unsigned int times[width],
     cap :> void;                                   // Drain first two values, and record time
     cap :> void @ t1;                              // Then record values; find changes later
 
-#pragma loop unroll(4)
-    for(int i = 0; i < N; i++) {                   // Record up to N values.
+    for(int i = 0; i < N; i+=4) {                   // Record up to N values.
         cap :> values[i];                          // Too high a value of N costs memory and time
+        cap :> values[i+1];                          // Too high a value of N costs memory and time
+        cap :> values[i+2];                          // Too high a value of N costs memory and time
+        cap :> values[i+3];                          // Too high a value of N costs memory and time
     }                                              // Low low a value of N will miss large caps
     notSeen = mask;                                // Caps that are not yet Low
     curCaps = CAPSENSE_PULLDOWN ? mask : 0;                 // Caps that are High
