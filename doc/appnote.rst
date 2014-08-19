@@ -121,7 +121,7 @@ took for the capacitor to discharge::
     cap <: 1 @ t0;                  // Set high, record time
     t0 += TIMEC;  
     cap @ t0 <: 1;                  // Keep high for 100 ns
-    sync(t0);                       // Wait for port to complete
+    sync(cap);                     // Wait for port to complete
     cap when pinseq(0) :> void @ t1;// Measure when low
     return (t1-t0) & 0xffff;        // return discharge time
   }
